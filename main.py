@@ -4,7 +4,7 @@ from time import sleep
 
 
 
-MAX_WORLD_WIDTH=80
+MAX_WORLD_WIDTH=80-1
 MAX_WORLD_HEIGHT=25
 
 
@@ -16,22 +16,11 @@ LAST_PRESSED_KEY=b''
 CHARACTER_MARIO_REPLACED=''
 
 
-WORLD_MAP=[
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                                                               ",
-"                                               |||                             ",
-"                                           __||||||||||||                      ",  
-"              ||||||||                     ||       ||                         ",
-"|||||||||||||||      |||||||||||||||||||||||||||||||||||||||_______________    "
-]
+WORLD_MAP=list()
+with open('1-1.txt') as f:
+    WORLD_MAP = f.read().splitlines()
 
+    
 MARIO_SPRITE=[
 " ▄████▄▄",
 "▄▀█▀▐└─┐",
@@ -46,7 +35,13 @@ MARIO_SPRITE_Y=len(MARIO_SPRITE)
 AREA_MARIO_REPLACED=list()
 def print_world(world):
     for line in world:
-        print(line)
+
+        camera_trigger_index=20
+        if MARIO_LOCATION_X >camera_trigger_index:
+            print(line[MARIO_LOCATION_X-camera_trigger_index:MARIO_LOCATION_X + (MAX_WORLD_WIDTH-camera_trigger_index)])
+        else:
+            print(line[:MAX_WORLD_WIDTH])
+
 
 
 def check_the_world(world):
@@ -91,17 +86,23 @@ def delete_2d_mario(x,y):
     MARIO_LOCATION_Y=-1
 
 
+def can_be_moved(x,y):
+    if((x-MARIO_SPRITE_X) >= 0) :
+        return True
+    return False
+
+    
 def move_2d_mario(to_x,to_y):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
+    if(can_be_moved(to_x,to_y)):
+        delete_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y)
 
-    delete_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y)
-
-    #create a new mario
-    create_2d_mario(to_x,to_y)
-    
-    MARIO_LOCATION_X=to_x
-    MARIO_LOCATION_Y=to_y
+        #create a new mario
+        create_2d_mario(to_x,to_y)
+        
+        MARIO_LOCATION_X=to_x
+        MARIO_LOCATION_Y=to_y
 
 def get_char_at(x,y):
     global WORLD_MAP
@@ -169,7 +170,6 @@ def get_characters_around_mario():
 
 def is_collided(char_list):
     for i in range(len(char_list)):
-        print(char_list,char_list[i],len(char_list))
         if char_list[i] != ' ':
             return True
     return False
@@ -179,7 +179,7 @@ def is_collided(char_list):
 check_the_world(WORLD_MAP)    
 #create_mario(0,0)
 
-create_2d_mario(15,5)
+create_2d_mario(15,11)
 
 while True:
     get_characters_around_mario()
@@ -189,7 +189,7 @@ while True:
     print ("running")
     print_world(WORLD_MAP)
 
-    move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y+1)
+    #move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y+1)
     
     if msvcrt.kbhit():
         process_key(msvcrt.getch())

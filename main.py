@@ -1,8 +1,20 @@
 import msvcrt
 import os
 from time import sleep
+import winsound
+import pyglet
+sound_stomp = pyglet.media.load('sounds/smb_stomp.wav',streaming=False)
+sound_mariodie = pyglet.media.load('sounds/smb_mariodie.wav',streaming=False)
+sound_jump = pyglet.media.load('sounds/smb_jump-small.wav',streaming=False)
+sound_theme = pyglet.media.load('sounds/01-main-theme-overworld.wav',streaming=False)
 
+ENEMIES_KILLED=0
+LIVES_LEFT=3
 
+WON=False
+bg_player=pyglet.media.Player()
+bg_player.queue(sound_theme)
+bg_player.eos_action = pyglet.media.SourceGroup.loop
 
 MAX_WORLD_WIDTH=80-1
 MAX_WORLD_HEIGHT=25
@@ -10,7 +22,8 @@ MAX_WORLD_HEIGHT=25
 MARIO_LOCATION_X=0
 MARIO_LOCATION_Y=0
 MARIO_ALIVE = True
-
+MARIO_CAN_DOUBLE_JUMP = True
+MARIO_JUMPED_ONCE = True
 
 ENEMY_LOCATION_X=0
 ENEMY_LOCATION_Y=0
@@ -60,7 +73,7 @@ AREA_MARIO_REPLACED=list()
 AREA_ENEMY_REPLACED=list()
 
 
-
+#prints world into cmd
 def print_world(world):
     for line in world:
 
@@ -70,8 +83,18 @@ def print_world(world):
         else:
             print(line[:MAX_WORLD_WIDTH])
 
+            
+#cleans screen and prints world           
+def refresh_screen():
+    global ENEMIES_KILLED
+    global LIVES_LEFT
+    
+    print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
+        
+    print_world(WORLD_MAP)
+    os.system('cls')
 
-
+#checks if world is properly formated
 def check_the_world():
     global WORLD_MAP_WIDTH
     global WORLD_MAP_HEIGHT
@@ -87,7 +110,7 @@ def check_the_world():
     WORLD_MAP_HEIGHT=len(WORLD_MAP)
 
 
-
+#creates mario in a world, using x and y coordinates
 def create_2d_mario(x,y):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
@@ -104,6 +127,7 @@ def create_2d_mario(x,y):
     MARIO_LOCATION_X=x
     MARIO_LOCATION_Y=y
 
+#creates enemy in a world, using x and y coordinates
 def create_2d_enemy(x,y):
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -120,7 +144,7 @@ def create_2d_enemy(x,y):
     ENEMY_LOCATION_X=x
     ENEMY_LOCATION_Y=y
 
-
+#deletes mario in a world, using x and y coordinates
 def delete_2d_mario(x,y):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
@@ -133,6 +157,7 @@ def delete_2d_mario(x,y):
     MARIO_LOCATION_X=-1
     MARIO_LOCATION_Y=-1
 
+#deletes enemy in a world, using x and y coordinates
 def delete_2d_enemy(x,y):
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -145,18 +170,19 @@ def delete_2d_enemy(x,y):
     ENEMY_LOCATION_X=-1
     ENEMY_LOCATION_Y=-1
 
-
+#checks if mario can be moved to an x,y coordinates
 def can_be_moved_mario(x,y):
     if(((x-MARIO_SPRITE_WIDTH) >= 0) and (x < WORLD_MAP_WIDTH) and ((y-(MARIO_SPRITE_HEIGHT-2)) > 0) and (y<WORLD_MAP_HEIGHT-1) ) :
         return True
     return False
 
+#checks if enemy can be moved to an x,y coordinates
 def can_be_moved_enemy(x,y):
     if(((x-ENEMY_SPRITE_WIDTH) >= 0) and (x < WORLD_MAP_WIDTH) and ((y-(ENEMY_SPRITE_HEIGHT-2)) > 0) and (y<WORLD_MAP_HEIGHT-1) ) :
         return True
     return False
 
-    
+#moves mario in 2d dimensions
 def move_2d_mario(to_x,to_y):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
@@ -168,7 +194,8 @@ def move_2d_mario(to_x,to_y):
         
         MARIO_LOCATION_X=to_x
         MARIO_LOCATION_Y=to_y
-    
+        
+#moves enemy in 2d dimensions
 def move_2d_enemy(to_x,to_y):
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -184,6 +211,7 @@ def move_2d_enemy(to_x,to_y):
 def get_char_at(x,y):
     global WORLD_MAP
     return WORLD_MAP[y][x]
+
 
     
 def get_characters_around_mario():
@@ -249,6 +277,8 @@ def is_collided_with_ridgid(char_list):
 def process_key(key):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
+    global MARIO_JUMPED_ONCE
+    global MARIO_CAN_DOUBLE_JUMP
     global LAST_PRESSED_KEY
 	
     global ENEMY_LOCATION_X
@@ -259,8 +289,10 @@ def process_key(key):
 
     #left arrow
     if key == b'K':
-        if not is_collided_with_ridgid(get_characters_around_mario()[1]):
-            move_2d_mario(MARIO_LOCATION_X-1,MARIO_LOCATION_Y)
+        for i in range(3):
+            if not is_collided_with_ridgid(get_characters_around_mario()[1]):
+                move_2d_mario(MARIO_LOCATION_X-1,MARIO_LOCATION_Y)
+                refresh_screen()
         pass
 
     #down arrow
@@ -271,9 +303,17 @@ def process_key(key):
     
     #up arrow
     elif key == b'H':
-        for i in range(10):
-            if not is_collided_with_ridgid(get_characters_around_mario()[2]):
-                move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y-1)
+        if not MARIO_JUMPED_ONCE or MARIO_CAN_DOUBLE_JUMP:
+            MARIO_JUMPED_ONCE=True
+
+            MARIO_CAN_DOUBLE_JUMP=not MARIO_CAN_DOUBLE_JUMP
+                
+            for i in range(10):
+                if not is_collided_with_ridgid(get_characters_around_mario()[2]):
+                    
+                    move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y-1)
+                refresh_screen()
+            sound_jump.play()
 
         pass
     
@@ -283,7 +323,7 @@ def process_key(key):
         for i in range(6):
             if not is_collided_with_ridgid(get_characters_around_mario()[3]):
                 move_2d_mario(MARIO_LOCATION_X+1,MARIO_LOCATION_Y)
-
+                refresh_screen()
         pass
     
     LAST_PRESSED_KEY=key
@@ -334,7 +374,14 @@ def deal_with_mario_and_enemy_collisions():
     
 def kill_mario():
     global MARIO_ALIVE
+    global LIVES_LEFT
+    
     MARIO_ALIVE = False
+    LIVES_LEFT=LIVES_LEFT -1
+    sound_mariodie.play()  
+    bg_player.pause()
+    make_screen()
+    sleep(sound_mariodie.duration)
 
     pass
  
@@ -343,8 +390,12 @@ def kill_enemy():
     global ENEMY_LOCATION_Y
     global AREA_ENEMY_REPLACED
     global ENEMY_SHOULD_MOVE_TO_RIGHT
+    global ENEMIES_KILLED
     
+    ENEMIES_KILLED=ENEMIES_KILLED+1
     ENEMY_SHOULD_MOVE_TO_RIGHT=False
+
+    sound_stomp.play()
     if MARIO_LOCATION_X > 400 and MARIO_LOCATION_X < 650:
         move_2d_enemy(700,18)
         
@@ -356,17 +407,45 @@ def kill_enemy():
     
     prepare_world()
     pass
+def make_screen():
+    print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
+    print_world(WORLD_MAP) 
+    
+def deal_with_out_of_bounds_collisions():
+    global MARIO_LOCATION_X
+    global MARIO_LOCATION_Y 
+    
+    if MARIO_LOCATION_Y > 18:
+        kill_mario()
     
     
-    
-    
+def colorize_world(world):
+    NEW_WORLD=list()
+    for line in world:
+        NEW_WORLD.append(line.replace(" ","[44m [40m"))
+        NEW_WORLD.append(line.replace("|","[43m [40m"))
+
+    return NEW_WORLD
+def display_score():
+    global ENEMIES_KILLED
+    global MAX_WORLD_WIDTH
+
+    print(("Enemies killed: "+str(ENEMIES_KILLED)).center(MAX_WORLD_WIDTH))  
+    print("")
+    print(("SCORE: "+str(ENEMIES_KILLED*ENEMIES_KILLED)).center(MAX_WORLD_WIDTH))        
+      
 def main():
     global MARIO_ALIVE
+    global MARIO_JUMPED_ONCE
+    global MARIO_CAN_DOUBLE_JUMP
     global AREA_MARIO_REPLACED
     global AREA_ENEMY_REPLACED
+    global WON
     
+    bg_player.play()
+
     
-    check_the_world()    
+    check_the_world()   
     #create_mario(0,0)
     
     create_2d_mario(15,11)
@@ -382,13 +461,26 @@ def main():
         if MARIO_ALIVE:
             move_enemy_left_and_right()
             deal_with_mario_and_enemy_collisions()
+            deal_with_out_of_bounds_collisions()
             
             
+            if MARIO_LOCATION_X > 1166 and not WON:
+                bg_player.pause()
+                print("**** CONGRATULATIONS, YOU HAVE SUCCESSFULLY COMPLETED THE LEVEL ****".center(MAX_WORLD_WIDTH))
+
+                winsound.PlaySound("sounds/smb_stage_clear.wav",winsound.SND_ALIAS)
+                WON=True
                 
-            
+                display_score()
+                exit()
+                
+                
         
             if not is_collided_with_ridgid(get_characters_around_mario()[0]):
                     move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y+1)
+            else:
+                MARIO_CAN_DOUBLE_JUMP=False
+                MARIO_JUMPED_ONCE=False
                     
         
                     
@@ -397,6 +489,8 @@ def main():
             
             
         else:
+            
+
             if MARIO_LOCATION_Y > 10 and not MARIO_KILLING_LIFTED:
                 move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y-1)
             elif MARIO_KILLING_LIFTED:
@@ -408,9 +502,13 @@ def main():
                     AREA_ENEMY_REPLACED=list()
                     
                     prepare_world()
-                    
-                    MARIO_ALIVE=True
-                    main()
+                    if LIVES_LEFT > 0:
+                        MARIO_ALIVE=True
+                        
+                        main()
+                    else:
+                        
+                        break
                 
                 
                 
@@ -422,12 +520,13 @@ def main():
             
         
         
-        print(MARIO_LOCATION_X,MARIO_LOCATION_Y)
+        #print(MARIO_LOCATION_X,MARIO_LOCATION_Y)
         
         
-        print ("running")
-        print_world(WORLD_MAP)
-            
-  
+        make_screen()
+        
+    print("Game Over".center(MAX_WORLD_WIDTH))        
+    winsound.PlaySound('sounds/smb_gameover.wav',winsound.SND_ALIAS)
+    display_score()
 
 main()  

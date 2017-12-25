@@ -3,18 +3,24 @@ import os
 from time import sleep
 import winsound
 import pyglet
+
+#define sounds for later use
 sound_stomp = pyglet.media.load('sounds/smb_stomp.wav',streaming=False)
 sound_mariodie = pyglet.media.load('sounds/smb_mariodie.wav',streaming=False)
 sound_jump = pyglet.media.load('sounds/smb_jump-small.wav',streaming=False)
 sound_theme = pyglet.media.load('sounds/01-main-theme-overworld.wav',streaming=False)
 
+#some initial variables
 ENEMIES_KILLED=0
 LIVES_LEFT=3
 
 WON=False
+
+#we will use a player for the sound
 bg_player=pyglet.media.Player()
 bg_player.queue(sound_theme)
 bg_player.eos_action = pyglet.media.SourceGroup.loop
+
 
 MAX_WORLD_WIDTH=80-1
 MAX_WORLD_HEIGHT=25
@@ -35,6 +41,8 @@ CHARACTER_MARIO_REPLACED=''
 
 
 WORLD_MAP=list()
+
+#this function makes a string of the world using a file
 def prepare_world():
     global WORLD_MAP
     with open('1-1.txt') as f:
@@ -46,6 +54,7 @@ prepare_world()
 
 WORLD_MAP_WIDTH=0
 WORLD_MAP_HEIGHT=0
+
 
 MARIO_SPRITE=[
 " ▄████▄▄",
@@ -213,7 +222,7 @@ def get_char_at(x,y):
     return WORLD_MAP[y][x]
 
 
-    
+#gets characters surrounding mario, it gets these characters from the WORLD_MAP variable   
 def get_characters_around_mario():
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
@@ -239,7 +248,7 @@ def get_characters_around_mario():
     return [characters_below_mario,characters_left_of_mario,characters_above_mario,characters_right_of_mario]
 
 	  
-
+#gets characters surrounding mario, it gets these characters from the WORLD_MAP variable   
 def get_characters_around_enemy():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -264,8 +273,7 @@ def get_characters_around_enemy():
 
     return [characters_below_enemy,characters_left_of_enemy,characters_above_enemy,characters_right_of_enemy]
 
-	
-	
+		
 def is_collided_with_ridgid(char_list):
     for i in range(len(char_list)):
         if char_list[i] == '|':
@@ -273,7 +281,7 @@ def is_collided_with_ridgid(char_list):
     return False
     
 	
-	
+#this function knows what to do with keys a user might press	
 def process_key(key):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
@@ -328,6 +336,9 @@ def process_key(key):
     
     LAST_PRESSED_KEY=key
 
+
+#this function moves the enemy to the left until the enemy collides with a wall,
+#in that case it will my moving to the left
 def move_enemy_left_and_right():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -343,7 +354,7 @@ def move_enemy_left_and_right():
     else:
         move_2d_enemy(ENEMY_LOCATION_X-1,ENEMY_LOCATION_Y)
         
-        
+#some dirt cheap collision detection       
 def deal_with_mario_and_enemy_collisions():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -371,7 +382,8 @@ def deal_with_mario_and_enemy_collisions():
         kill_mario()
         #print("SIDE Collision detected")
         pass
-    
+
+#this function kills mario
 def kill_mario():
     global MARIO_ALIVE
     global LIVES_LEFT
@@ -380,11 +392,12 @@ def kill_mario():
     LIVES_LEFT=LIVES_LEFT -1
     sound_mariodie.play()  
     bg_player.pause()
-    make_screen()
+    make_hud()
     sleep(sound_mariodie.duration)
 
     pass
- 
+
+#this function kills enemy
 def kill_enemy():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -407,10 +420,14 @@ def kill_enemy():
     
     prepare_world()
     pass
-def make_screen():
+
+
+#responsible for printing the HUD, colors are made using ANSI codea
+def make_hud():
     print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
     print_world(WORLD_MAP) 
-    
+
+#kills mario if he falls
 def deal_with_out_of_bounds_collisions():
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y 
@@ -418,22 +435,15 @@ def deal_with_out_of_bounds_collisions():
     if MARIO_LOCATION_Y > 18:
         kill_mario()
     
-    
-def colorize_world(world):
-    NEW_WORLD=list()
-    for line in world:
-        NEW_WORLD.append(line.replace(" ","[44m [40m"))
-        NEW_WORLD.append(line.replace("|","[43m [40m"))
-
-    return NEW_WORLD
+#shows scores
 def display_score():
     global ENEMIES_KILLED
     global MAX_WORLD_WIDTH
 
-    print(("Enemies killed: "+str(ENEMIES_KILLED)).center(MAX_WORLD_WIDTH))  
     print("")
     print(("SCORE: "+str(ENEMIES_KILLED*ENEMIES_KILLED)).center(MAX_WORLD_WIDTH))        
-      
+
+#this is where the magic happens
 def main():
     global MARIO_ALIVE
     global MARIO_JUMPED_ONCE
@@ -523,10 +533,11 @@ def main():
         #print(MARIO_LOCATION_X,MARIO_LOCATION_Y)
         
         
-        make_screen()
+        make_hud()
         
     print("Game Over".center(MAX_WORLD_WIDTH))        
     winsound.PlaySound('sounds/smb_gameover.wav',winsound.SND_ALIAS)
     display_score()
+    exit()
 
 main()  

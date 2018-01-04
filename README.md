@@ -1,5 +1,4 @@
 # mario-console
-SuperMario for cmd!!!
 ![screenshot](https://raw.githubusercontent.com/AbelTesfaye/mario-console/master/images/screen.png)
 
 My first semester university programming project. 

@@ -19,7 +19,7 @@ WON=False
 #we will use a player for the sound
 bg_player=pyglet.media.Player()
 bg_player.queue(sound_theme)
-bg_player.eos_action = pyglet.media.SourceGroup.loop
+bg_player.eos_action = 'loop'
 
 
 MAX_WORLD_WIDTH=80-1
@@ -92,14 +92,16 @@ def print_world(world):
         else:
             print(line[:MAX_WORLD_WIDTH])
 
-            
+def print_hud():
+    print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
+         
 #cleans screen and prints world           
 def refresh_screen():
     global ENEMIES_KILLED
     global LIVES_LEFT
     
-    print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
-        
+    print_hud()
+    
     print_world(WORLD_MAP)
     os.system('cls')
 
@@ -153,27 +155,27 @@ def create_2d_enemy(x,y):
     ENEMY_LOCATION_X=x
     ENEMY_LOCATION_Y=y
 
-#deletes mario in a world, using x and y coordinates
-def delete_2d_mario(x,y):
+#deletes mario in a world
+def delete_2d_mario():
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
     global CHARACTER_MARIO_REPLACED
 
     for i in range(MARIO_SPRITE_HEIGHT):
-        WORLD_MAP[y-i]=WORLD_MAP[y-i][:x-MARIO_SPRITE_WIDTH]+ AREA_MARIO_REPLACED[i] +WORLD_MAP[y-i][x:]
+        WORLD_MAP[MARIO_LOCATION_Y-i]=WORLD_MAP[MARIO_LOCATION_Y-i][:MARIO_LOCATION_X-MARIO_SPRITE_WIDTH]+ AREA_MARIO_REPLACED[i] +WORLD_MAP[MARIO_LOCATION_Y-i][MARIO_LOCATION_X:]
 
     AREA_MARIO_REPLACED.clear()
     MARIO_LOCATION_X=-1
     MARIO_LOCATION_Y=-1
 
-#deletes enemy in a world, using x and y coordinates
-def delete_2d_enemy(x,y):
+#deletes enemy in a world
+def delete_2d_enemy():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
     global CHARACTER_ENEMY_REPLACED
 
     for i in range(ENEMY_SPRITE_HEIGHT):
-        WORLD_MAP[y-i]=WORLD_MAP[y-i][:x-ENEMY_SPRITE_WIDTH]+ AREA_ENEMY_REPLACED[i] +WORLD_MAP[y-i][x:]
+        WORLD_MAP[ENEMY_LOCATION_Y-i]=WORLD_MAP[ENEMY_LOCATION_Y-i][:ENEMY_LOCATION_X-ENEMY_SPRITE_WIDTH]+ AREA_ENEMY_REPLACED[i] +WORLD_MAP[ENEMY_LOCATION_Y-i][ENEMY_LOCATION_X:]
 
     AREA_ENEMY_REPLACED.clear()
     ENEMY_LOCATION_X=-1
@@ -196,7 +198,7 @@ def move_2d_mario(to_x,to_y):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
     if(can_be_moved_mario(to_x,to_y)):
-        delete_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y)
+        delete_2d_mario()
 
         #create a new mario
         create_2d_mario(to_x,to_y)
@@ -209,7 +211,7 @@ def move_2d_enemy(to_x,to_y):
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
     if(can_be_moved_enemy(to_x,to_y)):
-        delete_2d_enemy(ENEMY_LOCATION_X,ENEMY_LOCATION_Y)
+        delete_2d_enemy()
 
         #create a new enemy
         create_2d_enemy(to_x,to_y)
@@ -404,19 +406,20 @@ def kill_enemy():
     global AREA_ENEMY_REPLACED
     global ENEMY_SHOULD_MOVE_TO_RIGHT
     global ENEMIES_KILLED
+    global SHOULD_CREATE_MORE_ENEMIES
     
     ENEMIES_KILLED=ENEMIES_KILLED+1
     ENEMY_SHOULD_MOVE_TO_RIGHT=False
 
     sound_stomp.play()
-    if MARIO_LOCATION_X > 400 and MARIO_LOCATION_X < 650:
-        move_2d_enemy(700,18)
-        
-    elif MARIO_LOCATION_X < 400:
+    if MARIO_LOCATION_X < 400:
         move_2d_enemy(440,18)
-
+        
+    elif MARIO_LOCATION_X > 400 and MARIO_LOCATION_X < 650:
+        move_2d_enemy(700,18)
+    
     else:
-        pass
+        delete_2d_enemy()
     
     prepare_world()
     pass
@@ -424,7 +427,7 @@ def kill_enemy():
 
 #responsible for printing the HUD, colors are made using ANSI codea
 def make_hud():
-    print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
+    print_hud()
     print_world(WORLD_MAP) 
 
 #kills mario if he falls

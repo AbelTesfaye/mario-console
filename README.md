@@ -1,7 +1,7 @@
 # mario-console
 ![screenshot](https://raw.githubusercontent.com/AbelTesfaye/mario-console/master/extras/screen.png)
 
-![Click here to watch gameplay](https://raw.githubusercontent.com/AbelTesfaye/mario-console/master/extras/gameplay.mp4)
+[Click here to watch gameplay](https://raw.githubusercontent.com/AbelTesfaye/mario-console/master/extras/gameplay.mp4)
 
 My first semester university programming project. 
 

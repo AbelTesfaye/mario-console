@@ -1,8 +1,8 @@
-import msvcrt
-import os
-from time import sleep
-import winsound
-import pyglet
+import msvcrt#for getting keyboard pressed button
+import os#to clear screen
+from time import sleep#for frame per second
+import winsound#sound for when stage is complete
+import pyglet#for background sound, since sound has to be async
 
 #define sounds for later use
 sound_stomp = pyglet.media.load('sounds/smb_stomp.wav',streaming=False)
@@ -42,7 +42,7 @@ CHARACTER_MARIO_REPLACED=''
 
 WORLD_MAP=list()
 
-#this function makes a string of the world using a file
+#load file into variable
 def prepare_world():
     global WORLD_MAP
     with open('1-1.txt') as f:
@@ -92,6 +92,7 @@ def print_world(world):
         else:
             print(line[:MAX_WORLD_WIDTH])
 
+#prints HUD
 def print_hud():
     print ((" "*3)+"Enemies killed: "+str(ENEMIES_KILLED)+(" "*15)+"[1;40;31mM[40;32mA[40;33mR[40;34mI[40;35mO [40;36mC[40;31mO[40;32mN[40;33mS[40;34mO[40;35mL[40;36mE[40;37m"+(" "*15)+"Lives left: "+str(LIVES_LEFT))
          
@@ -275,7 +276,7 @@ def get_characters_around_enemy():
 
     return [characters_below_enemy,characters_left_of_enemy,characters_above_enemy,characters_right_of_enemy]
 
-		
+#if mario touched the rigid body		
 def is_collided_with_ridgid(char_list):
     for i in range(len(char_list)):
         if char_list[i] == '|':
@@ -283,7 +284,7 @@ def is_collided_with_ridgid(char_list):
     return False
     
 	
-#this function knows what to do with keys a user might press	
+#this function knows what to do with keys a user press key	
 def process_key(key):
     global MARIO_LOCATION_X
     global MARIO_LOCATION_Y
@@ -294,8 +295,6 @@ def process_key(key):
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
 
-    #print(LAST_PRESSED_KEY)
-    #print(key)
 
     #left arrow
     if key == b'K':
@@ -340,7 +339,7 @@ def process_key(key):
 
 
 #this function moves the enemy to the left until the enemy collides with a wall,
-#in that case it will my moving to the left
+#in that case it will be moving to the right
 def move_enemy_left_and_right():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -356,7 +355,8 @@ def move_enemy_left_and_right():
     else:
         move_2d_enemy(ENEMY_LOCATION_X-1,ENEMY_LOCATION_Y)
         
-#some dirt cheap collision detection       
+#if mario collides with enemy on left or right kill mario    
+#if mario collides with enemy on top kill enemy    
 def deal_with_mario_and_enemy_collisions():
     global ENEMY_LOCATION_X
     global ENEMY_LOCATION_Y
@@ -459,7 +459,6 @@ def main():
 
     
     check_the_world()   
-    #create_mario(0,0)
     
     create_2d_mario(15,11)
     create_2d_enemy(210,18)
@@ -467,8 +466,8 @@ def main():
     MARIO_KILLING_LIFTED=False
     
     while True:
-        sleep(0.05)
-        os.system('cls')
+        sleep(0.05)#so it is not CPU intensive
+        os.system('cls')#to clear cmd
         
         
         if MARIO_ALIVE:
@@ -478,6 +477,7 @@ def main():
             
             
             if MARIO_LOCATION_X > 1166 and not WON:
+                #if mario passed the flag, he wins
                 bg_player.pause()
                 print("**** CONGRATULATIONS, YOU HAVE SUCCESSFULLY COMPLETED THE LEVEL ****".center(MAX_WORLD_WIDTH))
 
@@ -488,7 +488,7 @@ def main():
                 exit()
                 
                 
-        
+            #this is gravity
             if not is_collided_with_ridgid(get_characters_around_mario()[0]):
                     move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y+1)
             else:
@@ -503,12 +503,15 @@ def main():
             
         else:
             
-
+            #mario is dead, so play dead animation
             if MARIO_LOCATION_Y > 10 and not MARIO_KILLING_LIFTED:
+                #lift mario up
                 move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y-1)
             elif MARIO_KILLING_LIFTED:
-                
+                #take mario down
                 move_2d_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y+1)
+                
+                
                 if not can_be_moved_mario(MARIO_LOCATION_X,MARIO_LOCATION_Y+1):
                 #restart game
                     AREA_MARIO_REPLACED=list()
